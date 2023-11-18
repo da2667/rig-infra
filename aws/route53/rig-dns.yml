@@ -1,0 +1,2 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: The stack for Rig's Route 53 DNS Records and Hosted Zone
