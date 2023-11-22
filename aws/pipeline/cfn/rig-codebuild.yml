@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: The CodeBuild Stack for Rig
+
+Parameters:
+  CodeBuildServiceRole:
+    Type: String
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+      Name: !Ref AWS::StackName
+      ServiceRole: !Ref CodeBuildServiceRole

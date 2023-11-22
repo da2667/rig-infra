@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: The Pipeline Stack for all Source, Build and Deploying of Rig
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - prod
+      - stg
+      - dev
+  PipelineName:
+    Type: String
+    Default: rig-codepipeline
+
+Resources:
+  CodePipelineStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        - Environment: !Ref Environment
+        - PipelineName: !Ref PipelineName
+      StackName: !Sub
+        - rig-${env}-codepipeline
+        - env: !Ref Environment
+          
+      TemplateURL: ./cfn/rig-codepipeline.yml
+      
+
+
+

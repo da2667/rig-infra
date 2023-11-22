@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Rig Landing Page S3 Bucket
+
+Parameters:
+  BucketName:
+    Type: String
+    Default: rig-landing-page-bucket
+  IndexDocument:
+    Type: String
+    Default: index.html
+  ErrorDocument:
+    Type: String
+    Default: error.html
+
+Resources:
+  LandingPageBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: PublicRead
+      BucketName: !Ref BucketName
+      WebsiteConfiguration: 
+        IndexDocument: !Ref IndexDocument
+        ErrorDocument: !Ref ErrorDocument
+      Tags:
+        - Key: Name
+          Value: !Ref BucketName

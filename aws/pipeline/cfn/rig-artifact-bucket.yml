@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Rig Artifact Bucket for CI/CD Pipeline
+
+Parameters:
+  BucketName:
+    Type: String
+    Default: rig-artifact-bucket
+
+Resources:
+  LandingPageBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+      BucketName: !Ref BucketName
+      Tags:
+        - Key: Name
+          Value: !Ref BucketName
