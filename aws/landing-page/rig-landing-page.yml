@@ -11,13 +11,39 @@ Parameters:
   ErrorDocument:
     Type: String
     Default: error.html
+  Environment:
+    Type: String
+    AllowedValues:
+      - prod
+      - stg
+      - dev
 
 Resources:
+  LandingPagePolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LandingPageBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref BucketName
+                - /*
+            Principal: '*'
+
   LandingPageBucket:
     Type: AWS::S3::Bucket
     Properties: 
-      AccessControl: PublicRead
+      AccessControl: BucketOwnerFullControl
       BucketName: !Ref BucketName
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
       WebsiteConfiguration: 
         IndexDocument: !Ref IndexDocument
         ErrorDocument: !Ref ErrorDocument
