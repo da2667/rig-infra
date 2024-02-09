@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Frontend Application Instance for Rig
+
+Parameters:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+  KeyPairName:
+    Type: String
+  ImageId:
+    Type: AWS::EC2::Image::Id
+  InstanceType:
+    Type: String
+  InstanceName:
+    Type: String
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Ref KeyPairName
+      KeyType: rsa
+      KeyFormat: pem
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyPair
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+        . ~/.nvm/nvm.sh
+        nvm install 18.15.0
+        
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
