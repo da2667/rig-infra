@@ -17,20 +17,34 @@ aws cloudformation deploy \
 # Add backend app pipeline here
 
 echo "Deploying networking..."
-aws cloudformation deploy --stack-name rig-${ENV}-VPC-Stack --template-file ./infra/vpc/vpc.yml --capabilities CAPABILITY_NAMED_IAM  --parameter-overrides VpcName='rig-${Environment}-VPC' AZ1='ap-southeast-2a' AZ2='ap-southeast-2b'
-VPCID=$(aws cloudformation --region $REGION describe-stacks --stack-name rig-${Environment}-VPC-Stack --query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' --output text)
+aws cloudformation deploy \
+    --stack-name rig-${env}-VPC-Stack \
+    --template-file ./infra/vpc/vpc.yml \
+    --capabilities CAPABILITY_NAMED_IAM  \
+    --parameter-overrides VpcName="rig-${env}-VPC" AZ1="ap-southeast-2a" AZ2="ap-southeast-2b"
+
+vpc_id=$(aws cloudformation --region $REGION describe-stacks --stack-name rig-${Environment}-VPC-Stack --query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' --output text)
 
 echo "Deploying security groups..."
-aws cloudformation deploy --stack-name rig-Frontend-SG-Stack --template-file ./infra/security_groups/sg-cidr.yml --capabilities CAPABILITY_NAMED_IAM --parameter-overrides SGName='rig-Frontend-SG' SGDescription='test' VpcId=$VPCID
-aws cloudformation deploy --stack-name rig-API-SG-Stack --template-file ./infra/security_groups/rig-API-SG.yml --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation deploy --stack-name rig-DB-SG-Stack --template-file ./infra/security_groups/rig-DB-SG.yml --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy \
+    --stack-name rig-Frontend-SG-Stack \
+    --template-file ./infra/sg/sg-cidr.yml \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides SGName="rig-${env}-frontend-sg" SGDescription="Frontend application access security group for Rig" VpcId=$vpc_id
 
-echo "Deploying EC2 instances..."
-aws cloudformation deploy --stack-name rig-Frontend-Instance-Stack --template-file ./infra/ec2/rig-Frontend-Instance.yml --capabilities CAPABILITY_NAMED_IAM
-aws cloudformation deploy --stack-name rig-API-Instance-Stack --template-file ./infra/ec2/rig-API-Instance.yml --capabilities CAPABILITY_NAMED_IAM
+# aws cloudformation deploy --stack-name rig-API-SG-Stack --template-file ./infra/sg/sg.yml --capabilities CAPABILITY_NAMED_IAM
+# aws cloudformation deploy --stack-name rig-DB-SG-Stack --template-file ./infra/sg/sg.yml --capabilities CAPABILITY_NAMED_IAM
 
-echo "Deploying RDS..."
-aws cloudformation deploy --stack-name rig-DB-RDS-Stack --template-file ./infra/rds/rig-DB-RDS.yml --capabilities CAPABILITY_NAMED_IAM
+# echo "Deploying EC2 instances..."
+# aws cloudformation deploy --stack-name rig-Frontend-Instance-Stack --template-file ./infra/ec2/rig-Frontend-Instance.yml --capabilities CAPABILITY_NAMED_IAM
+# aws cloudformation deploy --stack-name rig-API-Instance-Stack --template-file ./infra/ec2/rig-API-Instance.yml --capabilities CAPABILITY_NAMED_IAM
+
+# echo "Deploying RDS..."
+# aws cloudformation deploy --stack-name rig-DB-RDS-Stack --template-file ./infra/rds/rig-DB-RDS.yml --capabilities CAPABILITY_NAMED_IAM
 
 echo "Deploying CloudWatch Monitoring stack..."
-aws cloudformation deploy --stack-name rig-${Environment}-Monitoring-Stack --template-file ./infra/monitoring/monitoring.yml --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy \
+    --stack-name rig-${env}-monitoring-stack \
+    --template-file ./infra/monitoring/monitoring.yml \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides DashboardName="rig-${env}-dashboard"
