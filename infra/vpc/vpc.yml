@@ -101,6 +101,6 @@ Resources:
 Outputs:
   VpcId:
     Description: VPC Id for export for other stacks
-    Value: !Ref AssetAppMainVPC
+    Value: !Ref RigMainVPC
     Export:
       Name: !Join ["-", ["Output", !Ref VpcName]]
