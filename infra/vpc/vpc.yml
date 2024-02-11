@@ -97,3 +97,10 @@ Resources:
     Properties:
       SubnetId: !Ref APISubnet
       RouteTableId: !Ref RigPrivateRT
+
+Outputs:
+  VpcId:
+    Description: VPC Id for export for other stacks
+    Value: !Ref AssetAppMainVPC
+    Export:
+      Name: !Join ["-", ["Output", !Ref VpcName]]
