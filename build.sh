@@ -23,7 +23,7 @@ aws cloudformation deploy \
     --capabilities CAPABILITY_NAMED_IAM  \
     --parameter-overrides VpcName="rig-${env}-VPC" AZ1="ap-southeast-2a" AZ2="ap-southeast-2b"
 
-vpc_id=$(aws cloudformation --region $REGION describe-stacks --stack-name rig-${Environment}-VPC-Stack --query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' --output text)
+vpc_id=$(aws cloudformation --region $region describe-stacks --stack-name rig-${env}-VPC-Stack --query 'Stacks[0].Outputs[?OutputKey==`VpcId`].OutputValue' --output text)
 
 echo "Deploying security groups..."
 aws cloudformation deploy \
