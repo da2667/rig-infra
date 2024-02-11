@@ -30,7 +30,7 @@ aws cloudformation deploy \
     --stack-name rig-Frontend-SG-Stack \
     --template-file ./infra/sg/sg-cidr.yml \
     --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides SGName="rig-${env}-frontend-sg" SGDescription="Frontend application access security group for Rig" VpcId=$vpc_id
+    --parameter-overrides SGName="rig-${env}-frontend-sg" SGDescription="Frontend application access security group for Rig" VpcId=$vpc_id InboundCIDR="0.0.0.0/0"
 
 # aws cloudformation deploy --stack-name rig-API-SG-Stack --template-file ./infra/sg/sg.yml --capabilities CAPABILITY_NAMED_IAM
 # aws cloudformation deploy --stack-name rig-DB-SG-Stack --template-file ./infra/sg/sg.yml --capabilities CAPABILITY_NAMED_IAM
@@ -42,9 +42,9 @@ aws cloudformation deploy \
 # echo "Deploying RDS..."
 # aws cloudformation deploy --stack-name rig-DB-RDS-Stack --template-file ./infra/rds/rig-DB-RDS.yml --capabilities CAPABILITY_NAMED_IAM
 
-echo "Deploying CloudWatch Monitoring stack..."
-aws cloudformation deploy \
-    --stack-name rig-${env}-monitoring-stack \
-    --template-file ./infra/monitoring/monitoring.yml \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides DashboardName="rig-${env}-dashboard"
+# echo "Deploying CloudWatch Monitoring stack..."
+# aws cloudformation deploy \
+#    --stack-name rig-${env}-monitoring-stack \
+#    --template-file ./infra/monitoring/monitoring.yml \
+#    --capabilities CAPABILITY_NAMED_IAM \
+#    --parameter-overrides DashboardName="rig-${env}-dashboard"
