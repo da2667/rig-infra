@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Rig's Monitoring CloudWatch template
+
+Parameters:
+  DashboardName:
+    Type: String
+    Default: Rig-CW-Dashboard
+  FrontendInstanceId:
+    Type: AWS::EC2::Instance::Id
+
+Resources:
+  RigDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardBody: !Sub
+        '{
+           "widgets": [
+             {
+               "height": 6,
+               "width": 6,
+               "y": 0,
+               "x": 0,
+               "type": "metric",
+               "properties": {
+                 "view": "timeSeries",
+                 "stacked": false,
+                 "metrics": [["AWS/EC2", "CPUUtilization", "InstanceId", "${FrontendInstanceId}"]],
+                 "region": "ap-southeast-2",
+                 "liveData": true
+               }
+             }
+           ]
+         }'
+
+      DashboardName: !Ref DashboardName

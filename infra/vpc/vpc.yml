@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Rig's VPC template
+
+Parameters:
+  VpcName:
+    Type: String
+  AZ1:
+    Type: AWS::EC2::AvailabilityZone::Name
+  AZ2:
+    Type: AWS::EC2::AvailabilityZone::Name
+
+Resources:
+  RigMainVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcName
+
+  FrontendSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AZ1
+      VpcId: !Ref RigMainVPC
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: FrontendSubnet
+
+  APISubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AZ2
+      VpcId: !Ref RigMainVPC
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: Name
+          Value: APISubnet
+  DBSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AZ1
+      VpcId: !Ref RigMainVPC
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Name
+          Value: DBSubnet1
+  DBSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Ref AZ2
+      VpcId: !Ref RigMainVPC
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: DBSubnet2
+
+  RigIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: IGW
+
+  RigAttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref RigMainVPC
+      InternetGatewayId: !Ref RigIGW
+  
+  RigPublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref RigMainVPC
+      Tags:
+        - Key: Name
+          Value: RigPublicRT
+
+  RigPrivateRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref RigMainVPC
+      Tags:
+        - Key: Name
+          Value: RigPrivateRT
+  
+  RigPublicRTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref FrontendSubnet
+      RouteTableId: !Ref RigPublicRT
+
+  RigPrivateRTAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref APISubnet
+      RouteTableId: !Ref RigPrivateRT

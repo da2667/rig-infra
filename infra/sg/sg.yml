@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Rig's Frontend App Instance security group
+
+Parameters:
+  SGName:
+    Type: String
+  SGDescription:
+    Type: String
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  InboundSG:
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Ref SGName
+      GroupDescription: !Ref SGDescription
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3001
+          ToPort: 3001
+          SourceSecurityGroupId: !Ref InboundSG
+      Tags:
+        - Key: Name
+          Value: !Ref SGName

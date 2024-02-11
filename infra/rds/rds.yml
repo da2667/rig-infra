@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template for the RDS MySQL database for Rig
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - Prod
+      - Stg
+      - Dev
+  AllocatedStorage:
+    Type: Number
+    Default: 20
+  AZ:
+    Type: AWS::EC2::AvailabilityZone::Name
+  DBSubnet1:
+    Type: AWS::EC2::Subnet::Id
+  DBSubnet2:
+    Type: AWS::EC2::Subnet::Id
+  DBInstanceClass:
+    Type: String
+    Default: db.t2.micro
+  DBName:
+    Type: String
+    Default: rigdb
+  DBPort:
+    Type: Number
+    Default: 3306
+  DBUser:
+    Type: String
+  DBPass:
+    Type: String
+    NoEcho: true
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  RigDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet Group for Rig DB
+      SubnetIds:
+        - !Ref DBSubnet1
+        - !Ref DBSubnet2
+      Tags:
+        - Key: Name
+          Value: Rig DB Subnet Group
+
+  RigDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref AllocatedStorage
+      DBInstanceClass: !Ref DBInstanceClass
+      AvailabilityZone: !Ref AZ
+      DBInstanceIdentifier: !Sub Rig-${Environment}-DB
+      DBName: !Ref DBName
+      DBSubnetGroupName: !Ref RigDBSubnetGroup
+      Engine: mysql
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPass
+      Port: !Ref DBPort
+      PubliclyAccessible: false
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub Rig-${Environment}-DB
