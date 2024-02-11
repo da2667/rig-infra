@@ -10,6 +10,12 @@ Parameters:
     Type: String
   CodeBuildImage:
     Type: String
+  CodeStarConnectionArn:
+    Type: String
+  GitHubRepoId:
+    Type: String
+  GitHubBranch:
+    Type: String
 
 Resources:
   ArtifactBucket:
@@ -45,6 +51,7 @@ Resources:
                     - "ec2:*"
                     - "s3:*"
                     - "cloudformation:*"
+                    - "logs:*"
                   Resource: "*"
 
   CodePipelineRole:
@@ -63,6 +70,10 @@ Resources:
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "codestar-connections:UseConnection"
+                  Resource: "*"
                 - Effect: "Allow"
                   Action:
                     - "codebuild:BatchGetBuilds"
@@ -84,7 +95,7 @@ Resources:
     Properties:
       Source:
         Type: GITHUB
-        Location: 
+        Location: !Ref GitHubRepo
       ServiceRole: !Ref CodeBuildRole
       Artifacts:
         Type: S3
@@ -107,10 +118,14 @@ Resources:
           Actions:
             - Name: Source
               ActionTypeId:
-                Owner: ThirdParty
+                Owner: AWS
                 Category: Source
-                Version: 2
-                Provider: GitHub
+                Version: 1
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: !Ref GitHubRepoId
+                BranchName: !Ref GitHubBranch
               OutputArtifacts:
                 - Name: SourceOutput
         - Name: Build
