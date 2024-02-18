@@ -53,7 +53,7 @@ Resources:
           git checkout dev
           git pull
           npm i
-          npm start
+          nohup npm start &
       Tags:
         - Key: Name
           Value: !Ref InstanceName
