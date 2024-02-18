@@ -100,6 +100,7 @@ Resources:
       Source:
         Type: GITHUB
         Location: !Ref InfraRepo
+        SourceIdentifier: InfraSource
       SecondarySources:
         - Type: GITHUB
           Location: !Ref FrontendRepo
@@ -107,7 +108,12 @@ Resources:
       ServiceRole: !Ref CodeBuildRole
       Artifacts:
         Type: S3
+        ArtifactIdentifier: InfraSource
         Location: !Ref ArtifactBucket
+      SecondaryArtifacts:
+        - Type: S3
+          ArtifactIdentifier: FrontendSource
+          Location: !Ref ArtifactBucket
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: !Ref CodeBuildImage
@@ -150,7 +156,7 @@ Resources:
                 - Name: FrontendSourceOutput
         - Name: Build
           Actions:
-            - Name: Build
+            - Name: InfraBuild
               ActionTypeId:
                 Owner: AWS
                 Category: Build
@@ -158,6 +164,15 @@ Resources:
                 Provider: CodeBuild
               InputArtifacts:
                 - Name: InfraSourceOutput
+              Configuration:
+                ProjectName: !Ref CodeBuild
+            - Name: FrontendBuild
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: 1
+                Provider: CodeBuild
+              InputArtifacts:
                 - Name: FrontendSourceOutput
               Configuration:
                 ProjectName: !Ref CodeBuild
