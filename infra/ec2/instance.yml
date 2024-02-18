@@ -14,6 +14,10 @@ Parameters:
     Type: String
   SubnetId:
     Type: AWS::EC2::Subnet::Id
+  GitHubRepo:
+    Type: String
+  Environment:
+    Type: String
 
 Resources:
   KeyPair:
@@ -32,12 +36,15 @@ Resources:
       SubnetId: !Ref SubnetId
       SecurityGroupIds:
         - !Ref SecurityGroup
-      UserData: !Base64 |
-        #!/bin/bash -ex
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-        . ~/.nvm/nvm.sh
-        nvm install 18.15.0
-        
+      UserData:
+        Fn::Base64:
+          !Join ["", ["#!/bin/bash -ex", 
+          "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash",
+          ". ~/.nvm/nvm.sh",
+          "nvm install 18.15.0",
+          "git clone", !Ref GitHubRepo,
+          "npm run", !Ref Environment
+          ]] 
       Tags:
         - Key: Name
           Value: !Ref InstanceName

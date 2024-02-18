@@ -10,6 +10,8 @@ Parameters:
     Type: AWS::EC2::VPC::Id
   InboundSG:
     Type: AWS::EC2::SecurityGroup::Id
+  InboundPort:
+    Type: Number
 
 Resources:
   SecurityGroup:
@@ -20,8 +22,8 @@ Resources:
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 3001
-          ToPort: 3001
+          FromPort: !Ref InboundPort
+          ToPort: !Ref InboundPort
           SourceSecurityGroupId: !Ref InboundSG
       Tags:
         - Key: Name
