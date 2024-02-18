@@ -98,6 +98,13 @@ Resources:
       SubnetId: !Ref APISubnet
       RouteTableId: !Ref RigPrivateRT
 
+  RigIGWRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RigPublicRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref RigIGW
+
 Outputs:
   VpcId:
     Description: VPC Id for export for other stacks
