@@ -6,13 +6,17 @@ Parameters:
     Type: String
   CodePipelineName:
     Type: String
-  GitHubRepo:
+  InfraRepo:
+    Type: String
+  FrontendRepo:
     Type: String
   CodeBuildImage:
     Type: String
   CodeStarConnectionArn:
     Type: String
-  GitHubRepoId:
+  InfraGitHubRepoId:
+    Type: String
+  FrontendGitHubRepoId:
     Type: String
   GitHubBranch:
     Type: String
@@ -95,7 +99,10 @@ Resources:
     Properties:
       Source:
         Type: GITHUB
-        Location: !Ref GitHubRepo
+        Location: !Ref InfraRepo
+      SecondarySources:
+        - Type: GITHUB
+          Location: !Ref FrontendRepo
       ServiceRole: !Ref CodeBuildRole
       Artifacts:
         Type: S3
@@ -116,7 +123,7 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: Source
+            - Name: InfraSource
               ActionTypeId:
                 Owner: AWS
                 Category: Source
@@ -124,7 +131,19 @@ Resources:
                 Provider: CodeStarSourceConnection
               Configuration:
                 ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: !Ref GitHubRepoId
+                FullRepositoryId: !Ref InfraGitHubRepoId
+                BranchName: !Ref GitHubBranch
+              OutputArtifacts:
+                - Name: SourceOutput
+            - Name: FrontendSource
+              ActionTypeId:
+                Owner: AWS
+                Category: Source
+                Version: 1
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: !Ref FrontendGitHubRepoId
                 BranchName: !Ref GitHubBranch
               OutputArtifacts:
                 - Name: SourceOutput
