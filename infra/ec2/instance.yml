@@ -47,13 +47,14 @@ Resources:
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
           . ~/.nvm/nvm.sh
           nvm install 18.15.0
+          sudo su
           yum install git -y
           git clone https://github.com/da2667/rig.git
           cd rig
           git checkout dev
           git pull
           npm i
-          nohup npm start &
+          screen -d -m npm start
       Tags:
         - Key: Name
           Value: !Ref InstanceName
