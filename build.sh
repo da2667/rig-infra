@@ -9,7 +9,7 @@ infra_repo_id="da2667/rig-infra"
 frontend_repo_id="da2667/rig"
 ami_id="ami-02eec49345a878486"
 
-echo "Deploying pipeline(s)..."
+echo "Deploying pipeline..."
 aws cloudformation deploy \
     --stack-name rig-${env}-codepipeline-stack \
     --template-file ./infra/pipeline/pipeline.yml \
@@ -50,11 +50,13 @@ aws cloudformation deploy \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides SGName="rig-${env}-db-sg" SGDescription="Database security group access from API for the Rig application" VpcId=$vpc_id InboundSG=$api_sg_id InboundPort=3306
 
+echo "Deploying EC2 instances..."
+
 aws cloudformation deploy \
     --stack-name rig-frontend-instance-stack \
     --template-file ./infra/ec2/instance.yml \
     --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides SecurityGroup=$frontend_sg_id KeyPairName="rig-${env}-frontend-keypair" ImageId=$ami_id InstanceType="t2.micro" SubnetId=$frontend_subnet_id GitHubRepo=$frontend_repo Environment=$env
+    --parameter-overrides SecurityGroup=$frontend_sg_id KeyPairName="rig-${env}-frontend-keypair" ImageId=$ami_id InstanceType="t2.micro" InstanceName="rig-${env}-frontend-instance" SubnetId=$frontend_subnet_id GitHubRepo=$frontend_repo Environment=$env
 
 # aws cloudformation deploy --stack-name rig-api-instance-stack --template-file ./infra/ec2/instance.yml --capabilities CAPABILITY_NAMED_IAM
 

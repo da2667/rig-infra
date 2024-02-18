@@ -103,6 +103,7 @@ Resources:
       SecondarySources:
         - Type: GITHUB
           Location: !Ref FrontendRepo
+          SourceIdentifier: FrontendSource
       ServiceRole: !Ref CodeBuildRole
       Artifacts:
         Type: S3
@@ -134,7 +135,7 @@ Resources:
                 FullRepositoryId: !Ref InfraGitHubRepoId
                 BranchName: !Ref GitHubBranch
               OutputArtifacts:
-                - Name: SourceOutput
+                - Name: InfraSourceOutput
             - Name: FrontendSource
               ActionTypeId:
                 Owner: AWS
@@ -146,7 +147,7 @@ Resources:
                 FullRepositoryId: !Ref FrontendGitHubRepoId
                 BranchName: !Ref GitHubBranch
               OutputArtifacts:
-                - Name: SourceOutput
+                - Name: FrontendSourceOutput
         - Name: Build
           Actions:
             - Name: Build
@@ -156,7 +157,8 @@ Resources:
                 Version: 1
                 Provider: CodeBuild
               InputArtifacts:
-                - Name: SourceOutput
+                - Name: InfraSourceOutput
+                - Name: FrontendSourceOutput
               Configuration:
                 ProjectName: !Ref CodeBuild
 
