@@ -42,20 +42,19 @@ Resources:
       SubnetId: !Ref SubnetId
       SecurityGroupIds:
         - !Ref SecurityGroup
-      UserData:
-         !Base64 |
-          #!/bin/bash -ex
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-          . ~/.nvm/nvm.sh
-          nvm install 18.15.0
-          sudo su
-          yum install git -y
-          git clone https://github.com/da2667/rig.git
-          cd rig
-          git checkout dev
-          git pull
-          npm i
-          screen -d -m npm start
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+        export NVM_DIR="/root/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+        nvm install 18.15.0
+        yum install git -y
+        git clone https://github.com/da2667/rig.git
+        cd rig
+        git checkout dev
+        git pull
+        npm i
+        screen -d -m npm start
       Tags:
         - Key: Name
           Value: !Ref InstanceName
