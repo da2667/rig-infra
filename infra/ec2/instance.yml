@@ -14,18 +14,16 @@ Parameters:
     Type: String
   SubnetId:
     Type: AWS::EC2::Subnet::Id
-  GitHubRepo:
-    Type: String
-  Environment:
-    Type: String
+#  GitHubRepo:
+#    Type: String
+#  Environment:
+#    Type: String
 
 Resources:
   KeyPair:
     Type: AWS::EC2::KeyPair
     Properties:
       KeyName: !Ref KeyPairName
-      KeyType: rsa
-      KeyFormat: pem
 
   EIP:
     Type: AWS::EC2::EIP
@@ -45,16 +43,18 @@ Resources:
       UserData: !Base64 |
         #!/bin/bash -ex
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-        export NVM_DIR="/root/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-        nvm install 18.15.0
+        echo 'export NVM_DIR="/.nvm"' >> ~/.bashrc
+        echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.bashrc
+        source ~/.bashrc
         yum install git -y
         git clone https://github.com/da2667/rig.git
         cd rig
         git checkout dev
         git pull
+        nvm install 18.15.0
         npm i
         screen -d -m npm start
+
       Tags:
         - Key: Name
           Value: !Ref InstanceName
