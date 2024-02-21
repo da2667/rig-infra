@@ -57,6 +57,7 @@ Resources:
                     - "cloudformation:*"
                     - "cloudwatch:*"
                     - "logs:*"
+                    - "iam:*"
                   Resource: "*"
 
   CodePipelineRole:
