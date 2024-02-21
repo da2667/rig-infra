@@ -55,6 +55,7 @@ Resources:
                     - "ec2:*"
                     - "s3:*"
                     - "cloudformation:*"
+                    - "cloudwatch:*"
                     - "logs:*"
                   Resource: "*"
 
