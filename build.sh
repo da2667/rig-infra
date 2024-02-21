@@ -58,14 +58,15 @@ aws cloudformation deploy \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides SecurityGroup=$frontend_sg_id KeyPairName="rig-${env}-frontend-keypair" ImageId=$ami_id InstanceType="t2.medium" InstanceName="rig-${env}-frontend-instance" SubnetId=$frontend_subnet_id
 
+frontend_instance_id=$(aws ec2 describe-instances --filter Name=subnet-id,Values=$frontend_subnet_id --query 'Reservations[*].Instances[*].[InstanceId]' --output text)
 # aws cloudformation deploy --stack-name rig-api-instance-stack --template-file ./infra/ec2/instance.yml --capabilities CAPABILITY_NAMED_IAM
 
 # echo "Deploying RDS..."
 # aws cloudformation deploy --stack-name rig-DB-RDS-Stack --template-file ./infra/rds/rig-DB-RDS.yml --capabilities CAPABILITY_NAMED_IAM
 
-# echo "Deploying CloudWatch Monitoring stack..."
-# aws cloudformation deploy \
-#    --stack-name rig-${env}-monitoring-stack \
-#    --template-file ./infra/monitoring/monitoring.yml \
-#    --capabilities CAPABILITY_NAMED_IAM \
-#    --parameter-overrides DashboardName="rig-${env}-dashboard"
+echo "Deploying CloudWatch Monitoring stack..."
+aws cloudformation deploy \
+    --stack-name rig-${env}-monitoring-stack \
+    --template-file ./infra/monitoring/monitoring.yml \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides DashboardName="rig-${env}-dashboard" FrontendInstanceId=$frontend_instance_id
