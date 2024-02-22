@@ -131,6 +131,7 @@ Resources:
                     - "ec2:*"
                     - "s3:*"
                     - "cloudformation:*"
+                    - "codedeploy:*"
                   Resource: "*"
 
   CodeBuild:
