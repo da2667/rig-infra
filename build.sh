@@ -9,12 +9,18 @@ infra_repo_id="da2667/rig-infra"
 frontend_repo_id="da2667/rig"
 ami_id="ami-02eec49345a878486"
 
-echo "Deploying pipeline..."
+echo "Deploying pipelines..."
 aws cloudformation deploy \
-    --stack-name rig-${env}-codepipeline-stack \
-    --template-file ./infra/pipeline/pipeline.yml \
+    --stack-name rig-${env}-infra-codepipeline-stack \
+    --template-file ./infra/pipeline/infra_pipeline.yml \
     --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides CodePipelineName="rig-${env}-codepipeline" InfraRepo=$infra_repo FrontendRepo=$frontend_repo CodeBuildImage="aws/codebuild/amazonlinux2-x86_64-standard:5.0" BucketName="rig-${env}-artifacts-bucket-210023018938" CodeStarConnectionArn=$codestar_arn InfraGitHubRepoId=$infra_repo_id FrontendGitHubRepoId=$frontend_repo_id GitHubBranch=$env
+    --parameter-overrides CodePipelineName="rig-${env}-infra-codepipeline" InfraRepo=$infra_repo CodeBuildImage="aws/codebuild/amazonlinux2-x86_64-standard:5.0" BucketName="rig-${env}-infra-artifacts-bucket-210023018938" CodeStarConnectionArn=$codestar_arn InfraGitHubRepoId=$infra_repo_id GitHubBranch=$env
+
+aws cloudformation deploy \
+    --stack-name rig-${env}-frontend-codepipeline-stack \
+    --template-file ./infra/pipeline/frontend_pipeline.yml \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides CodePipelineName="rig-${env}-frontend-codepipeline" FrontendRepo=$frontend_repo CodeBuildImage="aws/codebuild/amazonlinux2-x86_64-standard:5.0" BucketName="rig-${env}-frontend-artifacts-bucket-210023018938" CodeStarConnectionArn=$codestar_arn FrontendGitHubRepoId=$frontend_repo_id GitHubBranch=$env ApplicationName="rig-${env}-frontend-application" InstanceName="rig-${env}-frontend-instance"
 
 echo "Deploying networking..."
 aws cloudformation deploy \
@@ -54,7 +60,7 @@ echo "Deploying EC2 instances..."
 
 aws cloudformation deploy \
     --stack-name rig-frontend-instance-stack \
-    --template-file ./infra/ec2/instance.yml \
+    --template-file ./infra/ec2/frontend_instance.yml \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides SecurityGroup=$frontend_sg_id KeyPairName="rig-${env}-frontend-keypair" ImageId=$ami_id InstanceType="t2.medium" InstanceName="rig-${env}-frontend-instance" SubnetId=$frontend_subnet_id
 

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Frontend Application Instance for Rig
+Description: API Application Instance for Rig
 
 Parameters:
   SecurityGroup:
@@ -14,10 +14,6 @@ Parameters:
     Type: String
   SubnetId:
     Type: AWS::EC2::Subnet::Id
-#  GitHubRepo:
-#    Type: String
-#  Environment:
-#    Type: String
 
 Resources:
   KeyPair:
@@ -47,13 +43,13 @@ Resources:
         echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.bashrc
         source ~/.bashrc
         yum install git -y
-        git clone https://github.com/da2667/rig.git
+        git clone https://github.com/da2667/rig-api.git
         cd rig
         git checkout dev
         git pull
         nvm install 18.15.0
         npm i
-        screen -d -m npm start
+        screen -d -m npm run dev
 
       Tags:
         - Key: Name

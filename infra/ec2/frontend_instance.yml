@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Frontend Application Instance for Rig
+
+Parameters:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+  KeyPairName:
+    Type: String
+  ImageId:
+    Type: AWS::EC2::Image::Id
+  InstanceType:
+    Type: String
+  InstanceName:
+    Type: String
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  WaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref 'WaitHandle'
+      Timeout: '900'
+
+  KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: !Ref KeyPairName
+
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref EC2Instance
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  InstanceRolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: InstanceRole
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - autoscaling:Describe*
+              - cloudformation:Describe*
+              - cloudformation:GetTemplate
+              - s3:Get*
+            Resource: '*'
+      Roles:
+        - !Ref InstanceRole
+
+  InstanceRoleInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        services:
+          sysvint:
+            codedeploy-agent:
+              enabled: 'true'
+              ensureRunning: 'true'
+    Properties:
+      KeyName: !Ref KeyPair
+      IamInstanceProfile: !Ref InstanceRoleInstanceProfile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      UserData: !Base64
+        Fn::Join:
+          - ''
+          - - "#!/bin/bash -ex\n"
+            - "yum update -y aws-cfn-bootstrap\n"
+            - "yum install -y aws-cli\n"
+            - "yum install -y ruby\n"
+            - "iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3000\n"
+            - "echo 'iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3000' >> /etc/rc.local\n"
+            - "# Helper function.\n"
+            - "function error_exit\n"
+            - "{\n"
+            - '  /opt/aws/bin/cfn-signal -e 1 -r "$1" '
+            - !Ref 'WaitHandle'
+            - "'\n"
+            - "  exit 1\n"
+            - "}\n"
+            - "# Install the AWS CodeDeploy Agent.\n"
+            - "cd /home/ec2-user/\n"
+            - "aws s3 cp 's3://aws-codedeploy-us-east-1/latest/codedeploy-agent.noarch.rpm' . || error_exit 'Failed to download AWS CodeDeploy Agent.'\n"
+            - "yum -y install codedeploy-agent.noarch.rpm || error_exit 'Failed to install AWS CodeDeploy Agent.' \n"
+            - '/opt/aws/bin/cfn-init -s '
+            - !Ref 'AWS::StackId'
+            - ' -r WebAppInstance --region '
+            - !Ref 'AWS::Region'
+            - " || error_exit 'Failed to run cfn-init.'\n"
+            - "# All is well, so signal success.\n"
+            - '/opt/aws/bin/cfn-signal -e 0 -r "AWS CodeDeploy Agent setup complete." '
+            - !Ref 'WaitHandle'
+            - "'\n"
+
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName

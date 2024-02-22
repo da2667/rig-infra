@@ -1,0 +1,220 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: The CI/CD pipeline for the Rig Frontend Application
+
+Parameters:
+  BucketName:
+    Type: String
+  CodePipelineName:
+    Type: String
+  FrontendRepo:
+    Type: String
+  CodeBuildImage:
+    Type: String
+  CodeStarConnectionArn:
+    Type: String
+  FrontendGitHubRepoId:
+    Type: String
+  GitHubBranch:
+    Type: String
+  ApplicationName:
+    Type: String
+  InstanceName:
+    Type: String
+
+Resources:
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      Tags:
+        - Key: Name
+          Value: !Ref BucketName
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "iam:PassRole"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "ec2:*"
+                    - "s3:*"
+                    - "cloudformation:*"
+                    - "cloudwatch:*"
+                    - "logs:*"
+                    - "iam:*"
+                  Resource: "*"
+
+  CodeDeployTrustRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Sid: '1'
+            Effect: Allow
+            Principal:
+              Service:
+                - codedeploy.us-east-1.amazonaws.com
+                - codedeploy.us-west-2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+
+  CodeDeployRolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: CodeDeployPolicy
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Resource:
+              - '*'
+            Action:
+              - ec2:Describe*
+          - Effect: Allow
+            Resource:
+              - '*'
+            Action:
+              - autoscaling:CompleteLifecycleAction
+              - autoscaling:DeleteLifecycleHook
+              - autoscaling:DescribeLifecycleHooks
+              - autoscaling:DescribeAutoScalingGroups
+              - autoscaling:PutLifecycleHook
+              - autoscaling:RecordLifecycleActionHeartbeat
+      Roles:
+        - !Ref 'CodeDeployTrustRole'
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+          - PolicyName: "root"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "codestar-connections:UseConnection"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "codebuild:BatchGetBuilds"
+                    - "codebuild:StartBuild"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "iam:PassRole"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "ec2:*"
+                    - "s3:*"
+                    - "cloudformation:*"
+                  Resource: "*"
+
+  CodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: GITHUB
+        Location: !Ref FrontendRepo
+      ServiceRole: !Ref CodeBuildRole
+      Artifacts:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: !Ref CodeBuildImage
+        Type: LINUX_CONTAINER
+
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Ref ApplicationName
+      ComputePlatform: Server
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      Ec2TagFilters:
+        - Key: Name
+          Value: !Ref InstanceName
+          Type: KEY_AND_VALUE
+      ServiceRoleArn: !GetAtt CodeDeployTrustRole.Arn
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Ref CodePipelineName
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Owner: AWS
+                Category: Source
+                Version: 1
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref CodeStarConnectionArn
+                FullRepositoryId: !Ref FrontendGitHubRepoId
+                BranchName: !Ref GitHubBranch
+              OutputArtifacts:
+                - Name: FrontendSourceOutput
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Owner: AWS
+                Category: Build
+                Version: 1
+                Provider: CodeBuild
+              InputArtifacts:
+                - Name: FrontendSourceOutput
+              Configuration:
+                ProjectName: !Ref CodeBuild
+              OutputArtifacts:
+                - Name: FrontendBuildOutput
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref CodeDeployDeploymentGroup
+              InputArtifacts:
+                - Name: FrontendBuildOutput
+              RunOrder: 1
+
+      RestartExecutionOnUpdate: true

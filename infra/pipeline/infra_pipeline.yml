@@ -8,15 +8,11 @@ Parameters:
     Type: String
   InfraRepo:
     Type: String
-  FrontendRepo:
-    Type: String
   CodeBuildImage:
     Type: String
   CodeStarConnectionArn:
     Type: String
   InfraGitHubRepoId:
-    Type: String
-  FrontendGitHubRepoId:
     Type: String
   GitHubBranch:
     Type: String
@@ -102,11 +98,6 @@ Resources:
       Source:
         Type: GITHUB
         Location: !Ref InfraRepo
-        SourceIdentifier: InfraSource
-      SecondarySources:
-        - Type: GITHUB
-          Location: !Ref FrontendRepo
-          SourceIdentifier: FrontendSource
       ServiceRole: !Ref CodeBuildRole
       Artifacts:
         Type: S3
@@ -132,7 +123,7 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: InfraSource
+            - Name: Source
               ActionTypeId:
                 Owner: AWS
                 Category: Source
@@ -144,21 +135,9 @@ Resources:
                 BranchName: !Ref GitHubBranch
               OutputArtifacts:
                 - Name: InfraSourceOutput
-            - Name: FrontendSource
-              ActionTypeId:
-                Owner: AWS
-                Category: Source
-                Version: 1
-                Provider: CodeStarSourceConnection
-              Configuration:
-                ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: !Ref FrontendGitHubRepoId
-                BranchName: !Ref GitHubBranch
-              OutputArtifacts:
-                - Name: FrontendSourceOutput
         - Name: Build
           Actions:
-            - Name: InfraBuild
+            - Name: Build
               ActionTypeId:
                 Owner: AWS
                 Category: Build
@@ -166,16 +145,6 @@ Resources:
                 Provider: CodeBuild
               InputArtifacts:
                 - Name: InfraSourceOutput
-              Configuration:
-                ProjectName: !Ref CodeBuild
-            - Name: FrontendBuild
-              ActionTypeId:
-                Owner: AWS
-                Category: Build
-                Version: 1
-                Provider: CodeBuild
-              InputArtifacts:
-                - Name: FrontendSourceOutput
               Configuration:
                 ProjectName: !Ref CodeBuild
 
