@@ -16,15 +16,6 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
 
 Resources:
-  WaitHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-    
-  WaitCondition:
-    Type: AWS::CloudFormation::WaitCondition
-    Properties:
-      Handle: !Ref 'WaitHandle'
-      Timeout: '900'
-
   KeyPair:
     Type: AWS::EC2::KeyPair
     Properties:
@@ -89,36 +80,15 @@ Resources:
       SubnetId: !Ref SubnetId
       SecurityGroupIds:
         - !Ref SecurityGroup
-      UserData: !Base64
-        Fn::Join:
-          - ''
-          - - "#!/bin/bash -ex\n"
-            - "yum update -y aws-cfn-bootstrap\n"
-            - "yum install -y aws-cli\n"
-            - "yum install -y ruby\n"
-            - "iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3000\n"
-            - "echo 'iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3000' >> /etc/rc.local\n"
-            - "# Helper function.\n"
-            - "function error_exit\n"
-            - "{\n"
-            - '  /opt/aws/bin/cfn-signal -e 1 -r "$1" '
-            - !Ref 'WaitHandle'
-            - "'\n"
-            - "  exit 1\n"
-            - "}\n"
-            - "# Install the AWS CodeDeploy Agent.\n"
-            - "cd /home/ec2-user/\n"
-            - "aws s3 cp 's3://aws-codedeploy-us-east-1/latest/codedeploy-agent.noarch.rpm' . || error_exit 'Failed to download AWS CodeDeploy Agent.'\n"
-            - "yum -y install codedeploy-agent.noarch.rpm || error_exit 'Failed to install AWS CodeDeploy Agent.' \n"
-            - '/opt/aws/bin/cfn-init -s '
-            - !Ref 'AWS::StackId'
-            - ' -r WebAppInstance --region '
-            - !Ref 'AWS::Region'
-            - " || error_exit 'Failed to run cfn-init.'\n"
-            - "# All is well, so signal success.\n"
-            - '/opt/aws/bin/cfn-signal -e 0 -r "AWS CodeDeploy Agent setup complete." '
-            - !Ref 'WaitHandle'
-            - "'\n"
+      UserData: !Base64 |
+        #!/bin/bash
+        yum update -y
+        yum install ruby -y
+        yum install wget -y
+        cd /home/ec2-user
+        wget https://aws-codedeploy-ap-southeast-2.s3.ap-southeast-2.amazonaws.com/latest/install
+        chmod +x ./install
+        ./install auto
 
       Tags:
         - Key: Name

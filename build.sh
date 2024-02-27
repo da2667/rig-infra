@@ -9,12 +9,12 @@ infra_repo_id="da2667/rig-infra"
 frontend_repo_id="da2667/rig"
 ami_id="ami-02eec49345a878486"
 
-echo "Deploying pipelines..."
-aws cloudformation deploy \
-    --stack-name rig-${env}-infra-codepipeline-stack \
-    --template-file ./infra/pipeline/infra_pipeline.yml \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides CodePipelineName="rig-${env}-infra-codepipeline" InfraRepo=$infra_repo CodeBuildImage="aws/codebuild/amazonlinux2-x86_64-standard:5.0" BucketName="rig-${env}-infra-artifacts-bucket-210023018938" CodeStarConnectionArn=$codestar_arn InfraGitHubRepoId=$infra_repo_id GitHubBranch=$env
+#echo "Deploying pipelines..."
+#aws cloudformation deploy \
+#    --stack-name rig-${env}-infra-codepipeline-stack \
+ #   --template-file ./infra/pipeline/infra_pipeline.yml \
+  #  --capabilities CAPABILITY_NAMED_IAM \
+   # --parameter-overrides CodePipelineName="rig-${env}-infra-codepipeline" InfraRepo=$infra_repo CodeBuildImage="aws/codebuild/amazonlinux2-x86_64-standard:5.0" BucketName="rig-${env}-infra-artifacts-bucket-210023018938" CodeStarConnectionArn=$codestar_arn InfraGitHubRepoId=$infra_repo_id GitHubBranch=$env
 
 aws cloudformation deploy \
     --stack-name rig-${env}-frontend-codepipeline-stack \
