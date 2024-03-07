@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: API Application Instance for Rig
+Description: Frontend Application Instance for Rig
 
 Parameters:
   SecurityGroup:
@@ -27,29 +27,68 @@ Resources:
       Domain: vpc
       InstanceId: !Ref EC2Instance
 
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+  InstanceRolePolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: InstanceRole
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - autoscaling:Describe*
+              - cloudformation:Describe*
+              - cloudformation:GetTemplate
+              - s3:Get*
+            Resource: '*'
+      Roles:
+        - !Ref InstanceRole
+
+  InstanceRoleInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+
   EC2Instance:
     Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        services:
+          sysvint:
+            codedeploy-agent:
+              enabled: 'true'
+              ensureRunning: 'true'
     Properties:
       KeyName: !Ref KeyPair
+      IamInstanceProfile: !Ref InstanceRoleInstanceProfile
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       SubnetId: !Ref SubnetId
       SecurityGroupIds:
         - !Ref SecurityGroup
       UserData: !Base64 |
-        #!/bin/bash -ex
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-        echo 'export NVM_DIR="/.nvm"' >> ~/.bashrc
-        echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.bashrc
-        source ~/.bashrc
-        yum install git -y
-        git clone https://github.com/da2667/rig-api.git
-        cd rig
-        git checkout dev
-        git pull
-        nvm install 18.15.0
-        npm i
-        screen -d -m npm run dev
+        #!/bin/bash
+        yum update -y
+        yum install ruby -y
+        yum install wget -y
+        cd /home/ec2-user
+        wget https://aws-codedeploy-ap-southeast-2.s3.ap-southeast-2.amazonaws.com/latest/install
+        chmod +x ./install
+        ./install auto
 
       Tags:
         - Key: Name

@@ -1,26 +1,24 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: The CI/CD pipeline for the Rig Infrastructure
+Description: The CI/CD pipeline for the Rig Frontend Application
 
 Parameters:
   BucketName:
     Type: String
   CodePipelineName:
     Type: String
-  InfraRepo:
-    Type: String
-  FrontendRepo:
+  ApiRepo:
     Type: String
   CodeBuildImage:
     Type: String
   CodeStarConnectionArn:
     Type: String
-  InfraGitHubRepoId:
-    Type: String
-  FrontendGitHubRepoId:
+  ApiGitHubRepoId:
     Type: String
   GitHubBranch:
     Type: String
   ApplicationName:
+    Type: String
+  InstanceName:
     Type: String
 
 Resources:
@@ -71,8 +69,7 @@ Resources:
             Effect: Allow
             Principal:
               Service:
-                - codedeploy.us-east-1.amazonaws.com
-                - codedeploy.us-west-2.amazonaws.com
+                - codedeploy.amazonaws.com
             Action: sts:AssumeRole
       Path: /
 
@@ -134,6 +131,7 @@ Resources:
                     - "ec2:*"
                     - "s3:*"
                     - "cloudformation:*"
+                    - "codedeploy:*"
                   Resource: "*"
 
   CodeBuild:
@@ -141,21 +139,11 @@ Resources:
     Properties:
       Source:
         Type: GITHUB
-        Location: !Ref InfraRepo
-        SourceIdentifier: InfraSource
-      SecondarySources:
-        - Type: GITHUB
-          Location: !Ref FrontendRepo
-          SourceIdentifier: FrontendSource
+        Location: !Ref ApiRepo
       ServiceRole: !Ref CodeBuildRole
       Artifacts:
         Type: S3
-        ArtifactIdentifier: InfraSource
         Location: !Ref ArtifactBucket
-      SecondaryArtifacts:
-        - Type: S3
-          ArtifactIdentifier: FrontendSource
-          Location: !Ref ArtifactBucket
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: !Ref CodeBuildImage
@@ -171,6 +159,10 @@ Resources:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
       ApplicationName: !Ref CodeDeployApplication
+      Ec2TagFilters:
+        - Key: Name
+          Value: !Ref InstanceName
+          Type: KEY_AND_VALUE
       ServiceRoleArn: !GetAtt CodeDeployTrustRole.Arn
 
   CodePipeline:
@@ -184,7 +176,7 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: InfraSource
+            - Name: Source
               ActionTypeId:
                 Owner: AWS
                 Category: Source
@@ -192,35 +184,13 @@ Resources:
                 Provider: CodeStarSourceConnection
               Configuration:
                 ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: !Ref InfraGitHubRepoId
-                BranchName: !Ref GitHubBranch
-              OutputArtifacts:
-                - Name: InfraSourceOutput
-            - Name: FrontendSource
-              ActionTypeId:
-                Owner: AWS
-                Category: Source
-                Version: 1
-                Provider: CodeStarSourceConnection
-              Configuration:
-                ConnectionArn: !Ref CodeStarConnectionArn
-                FullRepositoryId: !Ref FrontendGitHubRepoId
+                FullRepositoryId: !Ref ApiGitHubRepoId
                 BranchName: !Ref GitHubBranch
               OutputArtifacts:
                 - Name: FrontendSourceOutput
         - Name: Build
           Actions:
-            - Name: InfraBuild
-              ActionTypeId:
-                Owner: AWS
-                Category: Build
-                Version: 1
-                Provider: CodeBuild
-              InputArtifacts:
-                - Name: InfraSourceOutput
-              Configuration:
-                ProjectName: !Ref CodeBuild
-            - Name: FrontendBuild
+            - Name: Build
               ActionTypeId:
                 Owner: AWS
                 Category: Build
@@ -230,5 +200,21 @@ Resources:
                 - Name: FrontendSourceOutput
               Configuration:
                 ProjectName: !Ref CodeBuild
+              OutputArtifacts:
+                - Name: FrontendBuildOutput
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref CodeDeployDeploymentGroup
+              InputArtifacts:
+                - Name: FrontendBuildOutput
+              RunOrder: 1
 
       RestartExecutionOnUpdate: true
