@@ -105,6 +105,25 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref RigIGW
 
+  RigNATRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RigPrivateRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref RigNATGW
+
+  NATIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+        
+  RigNATGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATIP.AllocationId
+      SubnetId: !Ref FrontendSubnet
+
+
 Outputs:
   VpcId:
     Description: VPC Id for export for other stacks
