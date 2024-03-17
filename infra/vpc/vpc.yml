@@ -110,7 +110,7 @@ Resources:
     Properties:
       RouteTableId: !Ref RigPrivateRT
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref RigNATGW
+      NatGatewayId: !Ref RigNATGW
 
   NATIP:
     Type: AWS::EC2::EIP
