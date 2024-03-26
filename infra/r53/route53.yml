@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: The Route 53 records stack for the Rig chat app
+
+Parameters:
+  Environment:
+    Type: String
+  DomainName:
+    Type: String
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+  FrontendInstanceIP:
+    Type: String
+  APIInstanceIP:
+    Type: String
+  DBInstanceHostname:
+    Type: String
+
+Resources:
+  FrontendRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Join
+        - "."
+        - - !Ref Environment
+          - !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      TTL: 300
+      ResourceRecords: 
+        - !Ref FrontendInstanceIP
+
+  APIRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Join
+        - "."
+        - - api
+          - !Ref Environment
+          - !Ref DomainName
+      Type: A
+      HostedZoneId: !Ref HostedZoneId
+      TTL: 300
+      ResourceRecords: 
+        - !Ref APIInstanceIP
+
+  DBRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Join
+        - "."
+        - - db
+          - !Ref Environment
+          - !Ref DomainName
+      Type: CNAME
+      HostedZoneId: !Ref HostedZoneId
+      TTL: 300
+      ResourceRecords: 
+        - !Ref DBInstanceHostname

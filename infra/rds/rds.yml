@@ -4,13 +4,8 @@ Description: Template for the RDS MySQL database for Rig
 Parameters:
   Environment:
     Type: String
-    AllowedValues:
-      - Prod
-      - Stg
-      - Dev
   AllocatedStorage:
     Type: Number
-    Default: 20
   AZ:
     Type: AWS::EC2::AvailabilityZone::Name
   DBSubnet1:
@@ -19,22 +14,27 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   DBInstanceClass:
     Type: String
-    Default: db.t2.micro
   DBName:
     Type: String
-    Default: rigdb
   DBPort:
     Type: Number
-    Default: 3306
   DBUser:
     Type: String
-  DBPass:
-    Type: String
-    NoEcho: true
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup::Id
 
 Resources:
+  DBPassword:
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      Name: RDSInstancePassword
+      Description: Secret that contains the RDS password
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "dbadmin"}'
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+
   RigDBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
@@ -52,12 +52,12 @@ Resources:
       AllocatedStorage: !Ref AllocatedStorage
       DBInstanceClass: !Ref DBInstanceClass
       AvailabilityZone: !Ref AZ
-      DBInstanceIdentifier: !Sub Rig-${Environment}-DB
+      DBInstanceIdentifier: !Sub rig-${Environment}-db
       DBName: !Ref DBName
       DBSubnetGroupName: !Ref RigDBSubnetGroup
       Engine: mysql
       MasterUsername: !Ref DBUser
-      MasterUserPassword: !Ref DBPass
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DBPassword}:SecretString:password}}'
       Port: !Ref DBPort
       PubliclyAccessible: false
       VPCSecurityGroups:
